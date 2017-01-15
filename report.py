@@ -47,42 +47,40 @@ data.Date = pd.to_datetime(data.Date.map(processDates))
 
 #-------------------------------------------------------------------------------
 # PROCESSING DATA
-''' # Work in progress
 def plot_difficulty_repartition(session, climber):
   s = pd.DatetimeIndex((session, ))[0]
   d = data[(data.Date == session) & (data.Grimpeur == climber)]
-  d = d.groupby(["Niveau", "Etat"]).size()
-  #d = d.groupby("Niveau").size()
+  df2 = pd.DataFrame(index = d.Niveau.unique()).sort_index()
+  for e in d.Etat.unique(): df2[e] = d[d.Etat == e].groupby("Niveau").size()
+  df3 = pd.DataFrame(index = df2.index, columns = state)
+  for k in state_abbr:
+    if k in df2.keys():
+      df3[state_dict[k]] = df2[k]
+  df3.fillna(0)    
+  #df2.sort_index(inplace = True)  
   fig = plt.figure()
-  ax = fig.add_subplot(1,1,1)
-  d.plot(kind= "bar")
+  df3.plot(kind = "bar")
+  plt.grid()
+  plt.xlabel("Niveau")
+  plt.ylabel("Quantité")
+  plt.title("{0} {1}".format(
+    "{0}/{1}/{2}".format(s.day, s.month, s.year),
+    climber))
   plt.savefig("{0}_{1}_routes_by_level.pdf".format(
     "{0}-{1}-{2}".format(s.year, s.month, s.day),
     climber))
-  """
-  ax.set_aspect("equal")
-  plt.pie(d, labels = d.keys(),
-     autopct=make_autopct(d.as_matrix()), 
-     shadow=True, startangle=90,
-     radius=0.45, center=(.5, .5), frame=False)
-  
-  levels = d.index
-  
-  ax.bar()
-  plt.xlim(0., 1.)
-  plt.ylim(0., 1.)
-  plt.savefig("{0}_{1}_routes_by_level.pdf".format(
-    "{0}-{1}-{2}".format(s.year, s.month, s.day),
-    climber))
-  """
-
+    
 climbers = data.Grimpeur.unique() # List of registered climbers
 walls = data.Salle.unique()       # List of registers walls
 sessions = data.Date.unique()
+state_abbr = ["O", "F", "S", "R", "E"]
+state = ["Onsight","Flash","Pinkpoint","Repeat","Fail"]
+state_dict = {k:v for k, v in zip(state_abbr,state)}
 
+           
 for session in sessions:
   for climber in climbers:
     plot_difficulty_repartition(session, climber)
-'''
+    
 
 

@@ -92,9 +92,9 @@ def plot_state_repartition(session, climber):
     "{0}-{1}-{2}".format(s.year, s.month, s.day),
     climber))
 
-def plot_level_evolution(climber):
+def level_session(session, climber):
     s = pd.DatetimeIndex((session, ))[0]
-    d = data[data.Grimpeur == climber]
+    d = data[(data.Date == session) & (data.Grimpeur == climber)]
     df2 = pd.DataFrame(index = d.Niveau.unique()).sort_index()
     for e in state_abbr: df2[e] = d[d.Etat == e].groupby("Niveau").size()
     df2 = df2.fillna(0)
@@ -105,20 +105,17 @@ def plot_level_evolution(climber):
         for i in range(df2.index.size):
             mi += df2.index[i] * df2[e].values[i]
             si += df2[e].values[i]
-        if si == 0:
-            m.append(mi)
-        else:
+        if si != 0:
             mi = mi / si
             m.append(mi)
-    niv_seance = 0.75 * (m[0] + m[1] + m[2]) / 3 + 0.25 * m[3]
-    fig = plt.figure()
-    plt.plot(session, niv_seance, 'ro')
-    plt.grid()
-    plt.xlabel("Sessions")
-    plt.ylabel("Niveau moyen")
-    plt.title("Niveau moyen {0}".format(climber))
-    plt.savefig("{0}_level_evolution.pdf".format(climber))
-    
+        else:
+            m.append(0)
+    if m[0] == 0: niv_seance = 0.75 * (m[1] + m[2]) / 2 + 0.25 * m[3]
+    elif m[1] == 0: niv_seance = 0.75 * (m[0] + m[2]) / 2 + 0.25 * m[3]
+    elif m[2] == 0: niv_seance = 0.75 * (m[0] + m[1]) / 2 + 0.25 * m[3]
+    elif m[3] == 0: niv_seance = (m[0] + m[1] + m[2]) / 3
+    else: niv_seance = 0.75 * (m[0] + m[1] + m[2]) / 3 + 0.25 * m[3]
+    return niv_seance
     
 climbers = data.Grimpeur.unique() # List of registered climbers
 walls = data.Salle.unique()       # List of registers walls
@@ -126,12 +123,24 @@ sessions = data.Date.unique()
 state_abbr = ["O", "F", "S", "R", "E"]
 state = ["Onsight","Flash","Pinkpoint","Repeat","Fail"]
 state_dict = {k:v for k, v in zip(state_abbr,state)}
-
            
-for session in sessions:
-  for climber in climbers:
-    plot_difficulty_repartition(session, climber)
-    plot_state_repartition(session, climber)
+#for session in sessions:
+  #for climber in climbers:
+    #plot_difficulty_repartition(session, climber)
+    #plot_state_repartition(session, climber)
+    #level_session(climber)
+
+def plot_level_evolution(climber):
+    niveau = []
+    for session in sessions:
+        niveau.append(level_session(session, climber))
+    fig = plt.figure()
+    plt.plot(sessions, niveau, 'ro')
+    plt.grid()
+    plt.xlabel("Sessions")
+    plt.ylabel("Niveau moyen")
+    plt.title("Niveau moyen {0}".format(climber))
+    plt.savefig("{0}_level_evolution.pdf".format(climber))
+
+for climber in climbers:
     plot_level_evolution(climber)
-
-

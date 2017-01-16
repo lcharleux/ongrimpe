@@ -56,17 +56,43 @@ def plot_difficulty_repartition(session, climber):
   for k in state_abbr:
     if k in df2.keys():
       df3[state_dict[k]] = df2[k]
-  df3.fillna(0)    
+  df3.fillna(0) 
+  etat = d.groupby("Etat").size()   
   #df2.sort_index(inplace = True)  
   fig = plt.figure()
   df3.plot(kind = "bar")
   plt.grid()
   plt.xlabel("Niveau")
-  plt.ylabel("Quantité")
+  plt.ylabel(u"Quantité")
   plt.title("{0} {1}".format(
     "{0}/{1}/{2}".format(s.day, s.month, s.year),
     climber))
+  #explode=(0.15, 0, 0, 0, 0)
+  #plt.pie(etat, explode=explode, labels=state_abbr, autopct='%1.1f%%', startangle=90, shadow=True)
+  #plt.axis('equal')
   plt.savefig("{0}_{1}_routes_by_level.pdf".format(
+    "{0}-{1}-{2}".format(s.year, s.month, s.day),
+    climber))
+  
+def plot_state_repartition(session, climber):
+  s = pd.DatetimeIndex((session, ))[0]
+  d = data[(data.Date == session) & (data.Grimpeur == climber)]
+  df2 = pd.DataFrame(index = d.Niveau.unique()).sort_index()
+  for e in d.Etat.unique(): df2[e] = d[d.Etat == e].groupby("Niveau").size()
+  df3 = pd.DataFrame(index = df2.index, columns = state)
+  for k in state_abbr:
+    if k in df2.keys():
+      df3[state_dict[k]] = df2[k]
+  df3.fillna(0) 
+  etat = d.groupby("Etat").size() 
+  fig = plt.figure()
+  explode=(0.15, 0, 0, 0, 0)
+  plt.pie(etat, explode=explode, labels=["E", "F", "O", "R", "S"], autopct='%1.1f%%', startangle=90, shadow=True)
+  plt.axis('equal')
+  plt.title("{0} {1}".format(
+    "{0}/{1}/{2}".format(s.day, s.month, s.year),
+    climber))
+  plt.savefig("{0}_{1}_states_repartition.pdf".format(
     "{0}-{1}-{2}".format(s.year, s.month, s.day),
     climber))
     
@@ -81,6 +107,7 @@ state_dict = {k:v for k, v in zip(state_abbr,state)}
 for session in sessions:
   for climber in climbers:
     plot_difficulty_repartition(session, climber)
+    plot_state_repartition(session, climber)
     
 
 

@@ -81,7 +81,7 @@ def plot_state_repartition(session, climber):
       df3[state_dict[k]] = df2[k]
   etats = []
   for i in range(5): etats.append(df3.fillna(0).sum()[i])
-  fig = plt.figure()
+  fig = plt.figure(figsize=(6,6))
   explode=(0, 0, 0, 0, 0.15)
   plt.pie(etats, explode=explode, labels=state, autopct='%1.1f%%', startangle=90, shadow=True)
   plt.axis('equal')
@@ -91,6 +91,34 @@ def plot_state_repartition(session, climber):
   plt.savefig("{0}_{1}_states_repartition.pdf".format(
     "{0}-{1}-{2}".format(s.year, s.month, s.day),
     climber))
+
+def plot_level_evolution(climber):
+    s = pd.DatetimeIndex((session, ))[0]
+    d = data[data.Grimpeur == climber]
+    df2 = pd.DataFrame(index = d.Niveau.unique()).sort_index()
+    for e in state_abbr: df2[e] = d[d.Etat == e].groupby("Niveau").size()
+    df2 = df2.fillna(0)
+    m = []
+    for e in state_abbr:
+        mi = 0
+        si = 0
+        for i in range(df2.index.size):
+            mi += df2.index[i] * df2[e].values[i]
+            si += df2[e].values[i]
+        if si == 0:
+            m.append(mi)
+        else:
+            mi = mi / si
+            m.append(mi)
+    niv_seance = 0.75 * (m[0] + m[1] + m[2]) / 3 + 0.25 * m[3]
+    fig = plt.figure()
+    plt.plot(session, niv_seance, 'ro')
+    plt.grid()
+    plt.xlabel("Sessions")
+    plt.ylabel("Niveau moyen")
+    plt.title("Niveau moyen {0}".format(climber))
+    plt.savefig("{0}_level_evolution.pdf".format(climber))
+    
     
 climbers = data.Grimpeur.unique() # List of registered climbers
 walls = data.Salle.unique()       # List of registers walls
@@ -104,6 +132,6 @@ for session in sessions:
   for climber in climbers:
     plot_difficulty_repartition(session, climber)
     plot_state_repartition(session, climber)
-    
+    plot_level_evolution(climber)
 
 

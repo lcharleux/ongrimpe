@@ -108,23 +108,26 @@ def level_session(session, climber):
   df2 = pd.DataFrame(index = d.Niveau.unique()).sort_index()
   for e in state_abbr: df2[e] = d[d.Etat == e].groupby("Niveau").size()
   df2 = df2.fillna(0)
-  m = []
-  for e in state_abbr:
-      mi = 0
-      si = 0
+  m1 = 0
+  s1 = 0
+  for e in ['O', 'F', 'S']:
       for i in range(df2.index.size):
-          mi += df2.index[i] * df2[e].values[i]
-          si += df2[e].values[i]
-      if si != 0:
-          mi = mi / si
-          m.append(mi)
-      else:
-          m.append(0)
-  if m[0] == 0: niv_seance = 0.75 * (m[1] + m[2]) / 2 + 0.25 * m[3]
-  elif m[1] == 0: niv_seance = 0.75 * (m[0] + m[2]) / 2 + 0.25 * m[3]
-  elif m[2] == 0: niv_seance = 0.75 * (m[0] + m[1]) / 2 + 0.25 * m[3]
-  elif m[3] == 0: niv_seance = (m[0] + m[1] + m[2]) / 3
-  else: niv_seance = 0.75 * (m[0] + m[1] + m[2]) / 3 + 0.25 * m[3]
+          m1 += df2.index[i] * df2[e].values[i]
+          s1 += df2[e].values[i]
+  if s1 != 0:
+      m1 = m1 / s1
+  else:
+      m1 = 0
+  m2 = 0
+  s2 = 0
+  for i in range(df2.index.size):
+      m2 += df2.index[i] * df2['R'].values[i]
+      s2 += df2['R'].values[i]
+  if s2 != 0:
+      m2 = m2 / s2
+  else:
+      m2 = 0
+  niv_seance = 0.75 * m1 + 0.25 * m2
   return niv_seance
   
 def plot_level_evolution(climber):

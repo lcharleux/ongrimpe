@@ -10,6 +10,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+plt.style.use('ggplot')
 #------------------------------------------------------------------------------- 
 
 
@@ -60,7 +61,7 @@ def plot_difficulty_repartition(session, climber):
   #df2.sort_index(inplace = True)  
   fig = plt.figure()
   df3.plot(kind = "bar")
-  plt.grid()
+  #plt.grid()
   plt.xlabel("Niveau")
   plt.ylabel(u"Quantité")
   plt.title("{0} {1}".format(

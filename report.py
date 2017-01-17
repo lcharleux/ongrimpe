@@ -124,18 +124,17 @@ state_abbr = ["O", "F", "S", "R", "E"]
 state = ["Onsight","Flash","Pinkpoint","Repeat","Fail"]
 state_dict = {k:v for k, v in zip(state_abbr,state)}
            
-#for session in sessions:
-  #for climber in climbers:
-    #plot_difficulty_repartition(session, climber)
-    #plot_state_repartition(session, climber)
-    #level_session(climber)
+for session in sessions:
+  for climber in climbers:
+    plot_difficulty_repartition(session, climber)
+    plot_state_repartition(session, climber)
 
 def plot_level_evolution(climber):
     niveau = []
     for session in sessions:
         niveau.append(level_session(session, climber))
     fig = plt.figure()
-    plt.plot(sessions, niveau, 'ro')
+    plt.plot(sessions, niveau, 'ro-')
     plt.grid()
     plt.xlabel("Sessions")
     plt.ylabel("Niveau moyen")

@@ -67,10 +67,10 @@ def plot_difficulty_repartition(session, climber):
   #plt.grid()
   plt.xlabel("Niveau")
   plt.ylabel(u"Quantité")
-  plt.title("{0} {1}".format(
+  plt.title("{0} {1} {2}".format(
     "{0}/{1}/{2}".format(s.day, s.month, s.year),
-    climber))
-  plt.savefig("{0}_{1}_routes_by_level.pdf".format(
+    climber, d.Salle.unique()[0]))
+  plt.savefig("{0}_{1}_routes.pdf".format(
     "{0}-{1}-{2}".format(s.year, s.month, s.day),
     climber))
     
@@ -92,10 +92,10 @@ def plot_state_repartition(session, climber):
   explode=(0, 0, 0, 0, 0.15)
   plt.pie(etats, explode=explode, labels=state, autopct='%1.1f%%', startangle=90, shadow=True)
   plt.axis('equal')
-  plt.title("{0} {1}".format(
+  plt.title("{0} {1} {2}".format(
     "{0}/{1}/{2}".format(s.day, s.month, s.year),
-    climber))
-  plt.savefig("{0}_{1}_states_repartition.pdf".format(
+    climber, d.Salle.unique()[0]))
+  plt.savefig("{0}_{1}_repartition.pdf".format(
     "{0}-{1}-{2}".format(s.year, s.month, s.day),
     climber))
 
@@ -143,7 +143,7 @@ def plot_level_evolution(climber):
   plt.xlabel("Sessions")
   plt.ylabel("Niveau moyen")
   plt.title("Niveau moyen {0}".format(climber))
-  plt.savefig("{0}_level_evolution.pdf".format(climber))
+  plt.savefig("{0}_evolution.pdf".format(climber))
         
 #-------------------------------------------------------------------------------
 

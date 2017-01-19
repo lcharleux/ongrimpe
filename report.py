@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 #-------------------------------------------------------------------------------
-# Analyseur d'entrainment de grimpe
+# Analyseur d'entrainement de grimpe
 #------------------------------------------------------------------------------- 
 
 
@@ -66,7 +66,7 @@ def plot_difficulty_repartition(session, climber):
   df3.plot(kind = "bar")
   #plt.grid()
   plt.xlabel("Niveau")
-  plt.ylabel(u"Quantité")
+  plt.ylabel("Quantité")
   plt.title("{0} {1} {2}".format(
     "{0}/{1}/{2}".format(s.day, s.month, s.year),
     climber, d.Salle.unique()[0]))
@@ -76,7 +76,7 @@ def plot_difficulty_repartition(session, climber):
     
 def plot_state_repartition(session, climber):
   """
-  Tutu
+  Pie plot of the state repartition of a given climber on a given session.
   """
   s = pd.DatetimeIndex((session, ))[0]
   d = data[(data.Date == session) & (data.Grimpeur == climber)]
@@ -88,7 +88,7 @@ def plot_state_repartition(session, climber):
       df3[state_dict[k]] = df2[k]
   etats = []
   for i in range(5): etats.append(df3.fillna(0).sum()[i])
-  fig = plt.figure(figsize=(6,6))
+  fig = plt.figure(figsize=(6,7))
   explode=(0, 0, 0, 0, 0.15)
   plt.pie(etats, explode=explode, labels=state, autopct='%1.1f%%', startangle=90, shadow=True)
   plt.axis('equal')
@@ -101,7 +101,7 @@ def plot_state_repartition(session, climber):
 
 def level_session(session, climber):
   """
-  Toto
+  Compute of the average level of a climber on all sessions.
   """
   s = pd.DatetimeIndex((session, ))[0]
   d = data[(data.Date == session) & (data.Grimpeur == climber)]
@@ -132,7 +132,7 @@ def level_session(session, climber):
   
 def plot_level_evolution(climber):
   """
-  Titi
+  Plot of the average level.
   """
   niveau = []
   for session in sessions:
@@ -149,22 +149,17 @@ def plot_level_evolution(climber):
 
 #-------------------------------------------------------------------------------
 # PROCESSING DATA
-
-  
-
-    
 climbers = data.Grimpeur.unique() # List of registered climbers
 walls = data.Salle.unique()       # List of registers walls
 sessions = data.Date.unique()
 state_abbr = ["O", "F", "S", "R", "E"]
-state = ["Onsight","Flash","Pinkpoint","Repeat","Fail"]
+state = ["Onsight","Flash","Sorti","Répèt","Echec"]
 state_dict = {k:v for k, v in zip(state_abbr,state)}
            
 for session in sessions:
-  for climber in climbers:
+  for climber in data[data.Date == session].Grimpeur.unique():
     plot_difficulty_repartition(session, climber)
     plot_state_repartition(session, climber)
-
 
 for climber in climbers:
     plot_level_evolution(climber)

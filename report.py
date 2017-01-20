@@ -99,50 +99,63 @@ def plot_state_repartition(session, climber):
     "{0}-{1}-{2}".format(s.year, s.month, s.day),
     climber))
 
-def level_session(session, climber):
+def level_session_bouldering(session, climber):
   """
-  Compute of the average level of a climber on all sessions.
+  Compute of the average level of a climber on sessions of bouldering in Cortigrimpe.
   """
+  ## à essayer pour retrouver les 3 meilleurs blocs en O, F ou S :
+  ## data.groupby(["Grimpeur", "Niveau", "Etat"]).size()
+
   s = pd.DatetimeIndex((session, ))[0]
   d = data[(data.Date == session) & (data.Grimpeur == climber)]
   df2 = pd.DataFrame(index = d.Niveau.unique()).sort_index()
   for e in state_abbr: df2[e] = d[d.Etat == e].groupby("Niveau").size()
   df2 = df2.fillna(0)
-  m1 = 0
-  s1 = 0
-  for e in ['O', 'F', 'S']:
-      for i in range(df2.index.size):
-          m1 += df2.index[i] * df2[e].values[i]
-          s1 += df2[e].values[i]
-  if s1 != 0:
-      m1 = m1 / s1
-  else:
-      m1 = 0
-  m2 = 0
-  s2 = 0
-  for i in range(df2.index.size):
-      m2 += df2.index[i] * df2['R'].values[i]
-      s2 += df2['R'].values[i]
-  if s2 != 0:
-      m2 = m2 / s2
-  else:
-      m2 = 0
-  niv_seance = 0.75 * m1 + 0.25 * m2
-  return niv_seance
+  OFS = []
+
+  for etat, group in d.groupby("Etat"):
+      print(etat,
+            group.Niveau.sort_values()[group.Niveau.sort_values().index[-1]],
+            #group.Niveau.sort_values()[group.Niveau.sort_values().index[-2]],
+            #group.Niveau.sort_values()[group.Niveau.sort_values().index[-3]]
+            )
+
+#  m1 = 0
+#  s1 = 0
+#  for e in ['O', 'F', 'S']:
+#      for i in range(df2.index.size):
+#          m1 += df2.index[i] * df2[e].values[i]
+#          s1 += df2[e].values[i]
+#  if s1 != 0:
+#      m1 = m1 / s1
+#  else:
+#      m1 = 0
+#  m2 = 0
+#  s2 = 0
+#  for i in range(df2.index.size):
+#      m2 += df2.index[i] * df2['R'].values[i]
+#      s2 += df2['R'].values[i]
+#  if s2 != 0:
+#      m2 = m2 / s2
+#  else:
+#      m2 = 0
+#  niv_seance = 0.75 * m1 + 0.25 * m2
+#  return niv_seance
   
-def plot_level_evolution(climber):
+def plot_level_evolution_bouldering(climber):
   """
-  Plot of the average level.
+  Plot of the average level in bouldering in Cortigrimpe.
   """
   niveau = []
   for session in sessions:
-      niveau.append(level_session(session, climber))
+      if data[data.Date == session].Salle.unique() == 'Cortigrimpe':
+          niveau.append(level_session_bouldering(session, climber))
   fig = plt.figure()
   plt.plot(sessions, niveau, 'ro-')
   plt.grid()
   plt.xlabel("Sessions")
   plt.ylabel("Niveau moyen")
-  plt.title("Niveau moyen {0}".format(climber))
+  plt.title("Niveau moyen {0} à Cortigrimpe".format(climber))
   plt.savefig("{0}_evolution.pdf".format(climber))
         
 #-------------------------------------------------------------------------------
@@ -160,6 +173,7 @@ for session in sessions:
   for climber in data[data.Date == session].Grimpeur.unique():
     plot_difficulty_repartition(session, climber)
     plot_state_repartition(session, climber)
+    level_session_bouldering(session, climber)
 
-for climber in climbers:
-    plot_level_evolution(climber)
+#for climber in climbers:
+#    plot_level_evolution_bouldering(climber)

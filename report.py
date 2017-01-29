@@ -66,7 +66,7 @@ def plot_difficulty_repartition(session, climber):
   df3.plot(kind = "bar")
   #plt.grid()
   plt.xlabel("Niveau")
-  plt.ylabel("Quantité")
+  plt.ylabel(u"Quantité")
   plt.title("{0} {1} {2}".format(
     "{0}/{1}/{2}".format(s.day, s.month, s.year),
     climber, d.Salle.unique()[0]))
@@ -106,57 +106,41 @@ def level_session_bouldering(session, climber):
   ## à essayer pour retrouver les 3 meilleurs blocs en O, F ou S :
   ## data.groupby(["Grimpeur", "Niveau", "Etat"]).size()
 
-  s = pd.DatetimeIndex((session, ))[0]
-  d = data[(data.Date == session) & (data.Grimpeur == climber)]
-  df2 = pd.DataFrame(index = d.Niveau.unique()).sort_index()
-  for e in state_abbr: df2[e] = d[d.Etat == e].groupby("Niveau").size()
-  df2 = df2.fillna(0)
-  OFS = []
-
-  for etat, group in d.groupby("Etat"):
-      print(etat,
-            group.Niveau.sort_values()[group.Niveau.sort_values().index[-1]],
-            #group.Niveau.sort_values()[group.Niveau.sort_values().index[-2]],
-            #group.Niveau.sort_values()[group.Niveau.sort_values().index[-3]]
-            )
-
-#  m1 = 0
-#  s1 = 0
-#  for e in ['O', 'F', 'S']:
-#      for i in range(df2.index.size):
-#          m1 += df2.index[i] * df2[e].values[i]
-#          s1 += df2[e].values[i]
-#  if s1 != 0:
-#      m1 = m1 / s1
-#  else:
-#      m1 = 0
-#  m2 = 0
-#  s2 = 0
-#  for i in range(df2.index.size):
-#      m2 += df2.index[i] * df2['R'].values[i]
-#      s2 += df2['R'].values[i]
-#  if s2 != 0:
-#      m2 = m2 / s2
-#  else:
-#      m2 = 0
-#  niv_seance = 0.75 * m1 + 0.25 * m2
-#  return niv_seance
+  if data[data.Date == session].Salle.unique() == 'Cortigrimpe':
+      s = pd.DatetimeIndex((session, ))[0]
+      d = data[(data.Date == session) & (data.Grimpeur == climber)]
+      df2 = pd.DataFrame(index = d.Niveau.unique()).sort_index()
+      for e in state_abbr: df2[e] = d[d.Etat == e].groupby("Niveau").size()
+      df2 = df2.fillna(0)
+      OFS = []
+      for etat, group in d.groupby("Etat"):
+          if etat in ['O', 'F', 'S']:
+              for i in range(len(group.Niveau.sort_values())):
+                  OFS.append(group.Niveau.sort_values()[group.Niveau.sort_values().index[-i]])    
+      niv = []
+      while len(niv)<3:
+          niv.append(float(max(OFS)))
+          OFS.remove(max(OFS))
+      niveau = (niv[0]+niv[1]+niv[2])/3
+      return niveau
   
 def plot_level_evolution_bouldering(climber):
   """
   Plot of the average level in bouldering in Cortigrimpe.
   """
   niveau = []
+  sessions_corti = []
   for session in sessions:
       if data[data.Date == session].Salle.unique() == 'Cortigrimpe':
           niveau.append(level_session_bouldering(session, climber))
+          sessions_corti.append(session)
   fig = plt.figure()
-  plt.plot(sessions, niveau, 'ro-')
+  plt.plot(sessions_corti, niveau, 'ro-')
   plt.grid()
   plt.xlabel("Sessions")
   plt.ylabel("Niveau moyen")
-  plt.title("Niveau moyen {0} à Cortigrimpe".format(climber))
-  plt.savefig("{0}_evolution.pdf".format(climber))
+  plt.title(u"Niveau moyen {0} à Cortigrimpe".format(climber))
+  plt.savefig("Evolution_{0}.pdf".format(climber))
         
 #-------------------------------------------------------------------------------
 
@@ -166,7 +150,7 @@ climbers = data.Grimpeur.unique() # List of registered climbers
 walls = data.Salle.unique()       # List of registers walls
 sessions = data.Date.unique()
 state_abbr = ["O", "F", "S", "R", "E"]
-state = ["Onsight","Flash","Sorti","Répèt","Echec"]
+state = ["Onsight","Flash","Sorti",u"Répèt","Echec"]
 state_dict = {k:v for k, v in zip(state_abbr,state)}
            
 for session in sessions:
@@ -175,5 +159,5 @@ for session in sessions:
     plot_state_repartition(session, climber)
     level_session_bouldering(session, climber)
 
-#for climber in climbers:
-#    plot_level_evolution_bouldering(climber)
+for climber in climbers:
+    plot_level_evolution_bouldering(climber)

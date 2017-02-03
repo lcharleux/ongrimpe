@@ -62,6 +62,7 @@ def plot_difficulty_state_repartition(session, climber):
     if k in df2.keys():
       df3[state_dict[k]] = df2[k]
   df3 = df3.fillna(0)
+  
   df4 = pd.DataFrame(index = d.Niveau.unique()).sort_index()
   for e in state_abbr: df4[e] = d[d.Etat == e].groupby("Niveau").size()
   df5 = pd.DataFrame(index = df4.index, columns = state)
@@ -87,39 +88,13 @@ def plot_difficulty_state_repartition(session, climber):
     "{0}-{1}-{2}".format(s.year, s.month, s.day),
     climber))
 
-#def level_session_bouldering(session, climber):
-#  """
-#  Compute of the average level of a climber on sessions of bouldering in Cortigrimpe.
-#  """
-#  if data[data.Date == session].Salle.unique() == 'Cortigrimpe':
-#      s = pd.DatetimeIndex((session, ))[0]
-#      d = data[(data.Date == session) & (data.Grimpeur == climber)]
-#      df2 = pd.DataFrame(index = d.Niveau.unique()).sort_index()
-#      for e in state_abbr: df2[e] = d[d.Etat == e].groupby("Niveau").size()
-#      df2 = df2.fillna(0)
-#      etats = []
-#      maxs_session = []
-#      for etat in state_abbr:
-#          s = 0
-#          for i in range(len(df2[etat])):
-#              s += df2[etat][i]
-#          if s == 0:
-#              etats.append(etat)
-#              maxs_session.append(0)
-#              
-#      for etat,group in d.groupby("Etat"):
-#          if etat in ['O', 'F', 'R', 'S']:
-#              etats.append(etat)
-#              maxs_session.append(float(max(group.Niveau.sort_values())))
-#      maxs_dict = {k:v for k, v in zip(etats,maxs_session)}
-#      return maxs_dict
-  
 def plot_level_evolution_bouldering(climber):
   """
   Plot of the average level in bouldering in Cortigrimpe.
   """
   maxs = []
   sessions_corti = []
+  volume = []
   for session in sessions:
       if data[data.Date == session].Salle.unique() == 'Cortigrimpe':
           s = pd.DatetimeIndex((session, ))[0]
@@ -136,24 +111,36 @@ def plot_level_evolution_bouldering(climber):
               if s == 0:
                   etats.append(etat)
                   maxs_session.append(0)
-              
           for etat,group in d.groupby("Etat"):
               if etat in ['O', 'F', 'R', 'S']:
                   etats.append(etat)
                   maxs_session.append(float(max(group.Niveau.sort_values())))
           maxs_dict = {k:v for k, v in zip(etats,maxs_session)}
-
           maxs.append(maxs_dict)
           sessions_corti.append(session)
+          
+          vol = 0
+          for etat in ['O', 'F', 'R', 'S']:
+              for i in range(len(df2[etat])):
+                  vol += df2[etat][i]
+          volume.append(vol)
+          
   df = pd.DataFrame(index = sessions_corti, columns = ["Onsight","Flash","Sorti",u"Répèt"])
   for etat in ['O', 'F', 'R', 'S']:
       for session in range(len(sessions_corti)):
           df[state_dict[etat]][session] = maxs[session][etat]
-  fig = plt.figure()
-  df.plot(kind = "bar")
-  plt.xlabel("Sessions")
-  plt.ylabel("Niveau moyen")
-  plt.title(u"Niveau moyen {0} à Cortigrimpe".format(climber))
+  df2 = pd.DataFrame(index = sessions_corti, columns = ["Volume"])
+  for session in range(len(sessions_corti)):
+      df2['Volume'][session] = volume[session]
+
+  fig, ax1 = plt.subplots()
+  df.plot(kind = "bar", ax = ax1)
+  ax1.set_xlabel("Sessions")
+  ax1.set_ylabel("Niveau")
+  ax2 = ax1.twinx()
+  df2.plot(kind = "bar", alpha = 0.5, ax = ax2)
+  ax2.set_ylabel("Volume")
+  plt.title(u"Evolution de {0} à Cortigrimpe".format(climber))
   plt.savefig("Evolution_{0}.pdf".format(climber))
   
 #-------------------------------------------------------------------------------
@@ -167,10 +154,9 @@ state_abbr = ["O", "F", "S", "R", "E"]
 state = ["Onsight","Flash","Sorti",u"Répèt","Echec"]
 state_dict = {k:v for k, v in zip(state_abbr,state)}
            
-for session in sessions:
-  for climber in data[data.Date == session].Grimpeur.unique():
-    plot_difficulty_state_repartition(session, climber)
-    #level_session_bouldering(session, climber)
+#for session in sessions:
+#  for climber in data[data.Date == session].Grimpeur.unique():
+#    plot_difficulty_state_repartition(session, climber)
 
 for climber in climbers:
     plot_level_evolution_bouldering(climber)

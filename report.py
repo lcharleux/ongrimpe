@@ -133,14 +133,15 @@ def plot_level_evolution_bouldering(climber):
   for session in range(len(sessions_corti)):
       df2['Volume'][session] = volume[session]
 
-  fig, ax1 = plt.subplots()
-  df.plot(kind = "bar", ax = ax1)
-  ax1.set_xlabel("Sessions")
-  ax1.set_ylabel("Niveau")
-  ax2 = ax1.twinx()
-  df2.plot(kind = "bar", alpha = 0.5, ax = ax2)
-  ax2.set_ylabel("Volume")
-  plt.title(u"Evolution de {0} à Cortigrimpe".format(climber))
+  fig, axes = plt.subplots(figsize = (14,6), ncols=2, sharey=True)
+  df.plot(kind = "barh", ax = axes[0])
+  df2.plot(kind = "barh", ax = axes[1])
+  axes[0].set(title='Niveau du meilleur bloc')
+  axes[1].set(title='Volume')
+  axes[0].invert_xaxis()
+  axes[0].invert_yaxis()
+  axes[0].yaxis.tick_right()
+  plt.suptitle(u"Evolution de {0} à Cortigrimpe".format(climber))
   plt.savefig("Evolution_{0}.pdf".format(climber))
   
 #-------------------------------------------------------------------------------
@@ -154,9 +155,9 @@ state_abbr = ["O", "F", "S", "R", "E"]
 state = ["Onsight","Flash","Sorti",u"Répèt","Echec"]
 state_dict = {k:v for k, v in zip(state_abbr,state)}
            
-#for session in sessions:
-#  for climber in data[data.Date == session].Grimpeur.unique():
-#    plot_difficulty_state_repartition(session, climber)
+for session in sessions:
+  for climber in data[data.Date == session].Grimpeur.unique():
+    plot_difficulty_state_repartition(session, climber)
 
 for climber in climbers:
     plot_level_evolution_bouldering(climber)

@@ -90,7 +90,7 @@ def plot_difficulty_state_repartition(session, climber):
 
 def plot_level_evolution_bouldering(climber):
   """
-  Plot of the average level in bouldering in Cortigrimpe.
+  Plot of the average level in bouldering (in Cortigrimpe).
   """
   maxs = []
   sessions_corti = []
@@ -137,12 +137,84 @@ def plot_level_evolution_bouldering(climber):
   df.plot(kind = "barh", ax = axes[0])
   df2.plot(kind = "barh", ax = axes[1])
   axes[0].set(title='Niveau du meilleur bloc')
-  axes[1].set(title='Volume')
+  axes[1].set(title='Nombre de blocs réussis')
   axes[0].invert_xaxis()
   axes[0].invert_yaxis()
   axes[0].yaxis.tick_right()
   plt.suptitle(u"Evolution de {0} à Cortigrimpe".format(climber))
-  plt.savefig("Evolution_{0}.pdf".format(climber))
+  plt.savefig("Evolution_{0}_bouldering.pdf".format(climber))
+  
+def plot_level_evolution_sportclimbing(climber):
+  """
+  Plot of the average level in sportclimbing (in Glaisins).
+  """
+  maxs = []
+  sessions_voies = []
+  volume = []
+  for session in sessions:
+      if data[data.Date == session].Salle.unique() == 'Glaisins':
+          s = pd.DatetimeIndex((session, ))[0]
+          d = data[(data.Date == session) & (data.Grimpeur == climber)]
+          df2 = pd.DataFrame(index = d.Niveau.unique()).sort_index()
+          for e in state_abbr: df2[e] = d[d.Etat == e].groupby("Niveau").size()
+          df2 = df2.fillna(0)
+          etats = []
+          maxs_session = []
+          for etat in state_abbr:
+              s = 0
+              for i in range(len(df2[etat])):
+                  s += df2[etat][i]
+              if s == 0:
+                  etats.append(etat)
+                  maxs_session.append(0)
+          for etat,group in d.groupby("Etat"):
+              if etat in ['O', 'F', 'R', 'S']:
+                  etats.append(etat)
+                  if len(max(group.Niveau.sort_values())) == 1:
+                      maxs_session.append(float(max(group.Niveau.sort_values())[0]))
+                  elif len(max(group.Niveau.sort_values())) > 1:
+                      m = float(max(group.Niveau.sort_values())[0])
+                      if max(group.Niveau.sort_values())[1] == 'a':
+                          m += 0
+                          if len(max(group.Niveau.sort_values())) == 3:
+                              m += 0.15
+                      elif max(group.Niveau.sort_values())[1] == 'b':
+                          m += 0.3
+                          if len(max(group.Niveau.sort_values())) == 3:
+                              m += 0.15
+                      elif max(group.Niveau.sort_values())[1] == 'c':
+                          m += 0.6
+                          if len(max(group.Niveau.sort_values())) == 3:
+                              m += 0.15
+                  maxs_session.append(float(m))
+          maxs_dict = {k:v for k, v in zip(etats,maxs_session)}
+          maxs.append(maxs_dict)
+          sessions_voies.append(session)
+          
+          vol = 0
+          for etat in ['O', 'F', 'R', 'S']:
+              for i in range(len(df2[etat])):
+                  vol += df2[etat][i]
+          volume.append(vol)
+          
+  df = pd.DataFrame(index = sessions_voies, columns = ["Onsight","Flash","Sorti",u"Répèt"])
+  for etat in ['O', 'F', 'R', 'S']:
+      for session in range(len(sessions_voies)):
+          df[state_dict[etat]][session] = maxs[session][etat]
+  df2 = pd.DataFrame(index = sessions_voies, columns = ["Volume"])
+  for session in range(len(sessions_voies)):
+      df2['Volume'][session] = volume[session]
+
+  fig, axes = plt.subplots(figsize = (14,6), ncols=2, sharey=True)
+  df.plot(kind = "barh", ax = axes[0])
+  df2.plot(kind = "barh", ax = axes[1])
+  axes[0].set(title='Niveau de la meilleure voie')
+  axes[1].set(title='Nombre de voies réussies')
+  axes[0].invert_xaxis()
+  axes[0].invert_yaxis()
+  axes[0].yaxis.tick_right()
+  plt.suptitle(u"Evolution de {0} aux Glaisins".format(climber))
+  plt.savefig("Evolution_{0}_sportclimbing.pdf".format(climber))
   
 #-------------------------------------------------------------------------------
 
@@ -161,3 +233,4 @@ for session in sessions:
 
 for climber in climbers:
     plot_level_evolution_bouldering(climber)
+    plot_level_evolution_sportclimbing(climber)

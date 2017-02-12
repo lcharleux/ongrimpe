@@ -95,7 +95,7 @@ def plot_level_evolution_bouldering(climber):
   maxs = []
   sessions_corti = []
   volume = []
-  for session in sessions:
+  for session in data[data.Grimpeur == climber].Date.unique():
       if data[data.Date == session].Salle.unique() == 'Cortigrimpe':
           s = pd.DatetimeIndex((session, ))[0]
           d = data[(data.Date == session) & (data.Grimpeur == climber)]
@@ -151,7 +151,7 @@ def plot_level_evolution_sportclimbing(climber):
   maxs = []
   sessions_voies = []
   volume = []
-  for session in sessions:
+  for session in data[data.Grimpeur == climber].Date.unique():
       if data[data.Date == session].Salle.unique() == 'Glaisins':
           s = pd.DatetimeIndex((session, ))[0]
           d = data[(data.Date == session) & (data.Grimpeur == climber)]

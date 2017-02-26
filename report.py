@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 #-------------------------------------------------------------------------------
-# Analyseur d'entrainment de grimpe
+# Analyseur d'entrainement de grimpe
 #------------------------------------------------------------------------------- 
 
 
@@ -48,9 +48,10 @@ data.Date = pd.to_datetime(data.Date.map(processDates))
 
 #-------------------------------------------------------------------------------
 # PLOT FUNCTIONS
-def plot_difficulty_repartition(session, climber):
+def plot_difficulty_state_repartition(session, climber):
   """
-  Bar plot of the difficulty repartition of a given climber on a given session.
+  Bar plot of the difficulty repartition and pie plot of the state repartition,
+  for a given climber on a given session.
   """
   s = pd.DatetimeIndex((session, ))[0]
   d = data[(data.Date == session) & (data.Grimpeur == climber)]
@@ -60,105 +61,180 @@ def plot_difficulty_repartition(session, climber):
   for k in state_abbr:
     if k in df2.keys():
       df3[state_dict[k]] = df2[k]
-  df3.fillna(0) 
-  #df2.sort_index(inplace = True)  
-  fig = plt.figure()
-  df3.plot(kind = "bar")
-  #plt.grid()
-  plt.xlabel("Niveau")
-  plt.ylabel(u"Quantité")
-  plt.title("{0} {1}".format(
-    "{0}/{1}/{2}".format(s.day, s.month, s.year),
-    climber))
-  plt.savefig("{0}_{1}_routes_by_level.pdf".format(
-    "{0}-{1}-{2}".format(s.year, s.month, s.day),
-    climber))
-    
-def plot_state_repartition(session, climber):
-  """
-  Tutu
-  """
-  s = pd.DatetimeIndex((session, ))[0]
-  d = data[(data.Date == session) & (data.Grimpeur == climber)]
-  df2 = pd.DataFrame(index = d.Niveau.unique()).sort_index()
-  for e in state_abbr: df2[e] = d[d.Etat == e].groupby("Niveau").size()
-  df3 = pd.DataFrame(index = df2.index, columns = state)
+  df3 = df3.fillna(0)
+  
+  df4 = pd.DataFrame(index = d.Niveau.unique()).sort_index()
+  for e in state_abbr: df4[e] = d[d.Etat == e].groupby("Niveau").size()
+  df5 = pd.DataFrame(index = df4.index, columns = state)
   for k in state_abbr:
-    if k in df2.keys():
-      df3[state_dict[k]] = df2[k]
+    if k in df4.keys():
+      df5[state_dict[k]] = df4[k]
   etats = []
-  for i in range(5): etats.append(df3.fillna(0).sum()[i])
-  fig = plt.figure(figsize=(6,6))
+  for i in range(5): etats.append(df5.fillna(0).sum()[i])
   explode=(0, 0, 0, 0, 0.15)
-  plt.pie(etats, explode=explode, labels=state, autopct='%1.1f%%', startangle=90, shadow=True)
-  plt.axis('equal')
-  plt.title("{0} {1}".format(
+  
+  fig = plt.figure(figsize = (12, 6))
+  ax1 = plt.subplot2grid((1,3), (0,0), colspan = 2)
+  ax1.set_xlabel("Niveau")
+  ax1.set_ylabel(u"Quantité")
+  df3.plot(kind = "bar", ax = ax1)
+  ax2 = plt.subplot2grid((1,3), (0,2))
+  ax2.pie(etats, explode=explode, labels=state, autopct='%1.1f%%', startangle=90, shadow=True)
+  ax2.axis('equal')
+  plt.suptitle("{0} {1} {2}".format(
     "{0}/{1}/{2}".format(s.day, s.month, s.year),
-    climber))
-  plt.savefig("{0}_{1}_states_repartition.pdf".format(
+    climber, d.Salle.unique()[0]))
+  fig.savefig("{0}_{1}.pdf".format(
     "{0}-{1}-{2}".format(s.year, s.month, s.day),
     climber))
 
-def level_session(session, climber):
+def plot_level_evolution_bouldering(climber):
   """
-  Toto
+  Plot of the average level in bouldering (in Cortigrimpe).
   """
-  s = pd.DatetimeIndex((session, ))[0]
-  d = data[(data.Date == session) & (data.Grimpeur == climber)]
-  df2 = pd.DataFrame(index = d.Niveau.unique()).sort_index()
-  for e in state_abbr: df2[e] = d[d.Etat == e].groupby("Niveau").size()
-  df2 = df2.fillna(0)
-  m = []
-  for e in state_abbr:
-      mi = 0
-      si = 0
-      for i in range(df2.index.size):
-          mi += df2.index[i] * df2[e].values[i]
-          si += df2[e].values[i]
-      if si != 0:
-          mi = mi / si
-          m.append(mi)
-      else:
-          m.append(0)
-  if m[0] == 0: niv_seance = 0.75 * (m[1] + m[2]) / 2 + 0.25 * m[3]
-  elif m[1] == 0: niv_seance = 0.75 * (m[0] + m[2]) / 2 + 0.25 * m[3]
-  elif m[2] == 0: niv_seance = 0.75 * (m[0] + m[1]) / 2 + 0.25 * m[3]
-  elif m[3] == 0: niv_seance = (m[0] + m[1] + m[2]) / 3
-  else: niv_seance = 0.75 * (m[0] + m[1] + m[2]) / 3 + 0.25 * m[3]
-  return niv_seance
+  maxs = []
+  sessions_corti = []
+  volume = []
+  for session in data[data.Grimpeur == climber].Date.unique():
+      if data[data.Date == session].Salle.unique() == 'Cortigrimpe':
+          s = pd.DatetimeIndex((session, ))[0]
+          d = data[(data.Date == session) & (data.Grimpeur == climber)]
+          df2 = pd.DataFrame(index = d.Niveau.unique()).sort_index()
+          for e in state_abbr: df2[e] = d[d.Etat == e].groupby("Niveau").size()
+          df2 = df2.fillna(0)
+          etats = []
+          maxs_session = []
+          for etat in state_abbr:
+              s = 0
+              for i in range(len(df2[etat])):
+                  s += df2[etat][i]
+              if s == 0:
+                  etats.append(etat)
+                  maxs_session.append(0)
+          for etat,group in d.groupby("Etat"):
+              if etat in ['O', 'F', 'R', 'S']:
+                  etats.append(etat)
+                  maxs_session.append(float(max(group.Niveau.sort_values())))
+          maxs_dict = {k:v for k, v in zip(etats,maxs_session)}
+          maxs.append(maxs_dict)
+          sessions_corti.append(session)
+          
+          vol = 0
+          for etat in ['O', 'F', 'R', 'S']:
+              for i in range(len(df2[etat])):
+                  vol += df2[etat][i]
+          volume.append(vol)
+          
+  df = pd.DataFrame(index = sessions_corti, columns = ["Onsight","Flash","Sorti",u"Répèt"])
+  for etat in ['O', 'F', 'R', 'S']:
+      for session in range(len(sessions_corti)):
+          df[state_dict[etat]][session] = maxs[session][etat]
+  df2 = pd.DataFrame(index = sessions_corti, columns = ["Volume"])
+  for session in range(len(sessions_corti)):
+      df2['Volume'][session] = volume[session]
+
+  fig, axes = plt.subplots(figsize = (14,6), ncols=2, sharey=True)
+  df.plot(kind = "barh", ax = axes[0])
+  df2.plot(kind = "barh", ax = axes[1])
+  axes[0].set(title='Niveau du meilleur bloc')
+  axes[1].set(title='Nombre de blocs réussis')
+  axes[0].invert_xaxis()
+  axes[0].invert_yaxis()
+  axes[0].yaxis.tick_right()
+  plt.suptitle(u"Evolution de {0} à Cortigrimpe".format(climber))
+  plt.savefig("Evolution_{0}_bouldering.pdf".format(climber))
   
-def plot_level_evolution(climber):
+def plot_level_evolution_sportclimbing(climber):
   """
-  Titi
+  Plot of the average level in sportclimbing (in Glaisins).
   """
-  niveau = []
-  for session in sessions:
-      niveau.append(level_session(session, climber))
-  fig = plt.figure()
-  plt.plot(sessions, niveau, 'ro-')
-  plt.grid()
-  plt.xlabel("Sessions")
-  plt.ylabel("Niveau moyen")
-  plt.title("Niveau moyen {0}".format(climber))
-  plt.savefig("{0}_level_evolution.pdf".format(climber))
-        
+  maxs = []
+  sessions_voies = []
+  volume = []
+  for session in data[data.Grimpeur == climber].Date.unique():
+      if data[data.Date == session].Salle.unique() == 'Glaisins':
+          s = pd.DatetimeIndex((session, ))[0]
+          d = data[(data.Date == session) & (data.Grimpeur == climber)]
+          df2 = pd.DataFrame(index = d.Niveau.unique()).sort_index()
+          for e in state_abbr: df2[e] = d[d.Etat == e].groupby("Niveau").size()
+          df2 = df2.fillna(0)
+          etats = []
+          maxs_session = []
+          for etat in state_abbr:
+              s = 0
+              for i in range(len(df2[etat])):
+                  s += df2[etat][i]
+              if s == 0:
+                  etats.append(etat)
+                  maxs_session.append(0)
+          for etat,group in d.groupby("Etat"):
+              if etat in ['O', 'F', 'R', 'S']:
+                  etats.append(etat)
+                  if len(max(group.Niveau.sort_values())) == 1:
+                      maxs_session.append(float(max(group.Niveau.sort_values())[0]))
+                  elif len(max(group.Niveau.sort_values())) > 1:
+                      m = float(max(group.Niveau.sort_values())[0])
+                      if max(group.Niveau.sort_values())[1] == 'a':
+                          m += 0
+                          if len(max(group.Niveau.sort_values())) == 3:
+                              m += 0.15
+                      elif max(group.Niveau.sort_values())[1] == 'b':
+                          m += 0.3
+                          if len(max(group.Niveau.sort_values())) == 3:
+                              m += 0.15
+                      elif max(group.Niveau.sort_values())[1] == 'c':
+                          m += 0.6
+                          if len(max(group.Niveau.sort_values())) == 3:
+                              m += 0.15
+                  maxs_session.append(float(m))
+          maxs_dict = {k:v for k, v in zip(etats,maxs_session)}
+          maxs.append(maxs_dict)
+          sessions_voies.append(session)
+          
+          vol = 0
+          for etat in ['O', 'F', 'R', 'S']:
+              for i in range(len(df2[etat])):
+                  vol += df2[etat][i]
+          volume.append(vol)
+          
+  df = pd.DataFrame(index = sessions_voies, columns = ["Onsight","Flash","Sorti",u"Répèt"])
+  for etat in ['O', 'F', 'R', 'S']:
+      for session in range(len(sessions_voies)):
+          df[state_dict[etat]][session] = maxs[session][etat]
+  df2 = pd.DataFrame(index = sessions_voies, columns = ["Volume"])
+  for session in range(len(sessions_voies)):
+      df2['Volume'][session] = volume[session]
+
+  fig, axes = plt.subplots(figsize = (14,6), ncols=2, sharey=True)
+  df.plot(kind = "barh", ax = axes[0])
+  df2.plot(kind = "barh", ax = axes[1])
+  axes[0].set(title='Niveau de la meilleure voie')
+  axes[1].set(title='Nombre de voies réussies')
+  axes[0].invert_xaxis()
+  axes[0].invert_yaxis()
+  axes[0].yaxis.tick_right()
+  plt.suptitle(u"Evolution de {0} aux Glaisins".format(climber))
+  plt.savefig("Evolution_{0}_sportclimbing.pdf".format(climber))
+  
 #-------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------
 # PROCESSING DATA
+<<<<<<< HEAD
    
+=======
+>>>>>>> 9ebe5b500f4cf6dc419b83457a5678484d37d7f5
 climbers = data.Grimpeur.unique() # List of registered climbers
 walls = data.Salle.unique()       # List of registers walls
 sessions = data.Date.unique()
 state_abbr = ["O", "F", "S", "R", "E"]
-state = ["Onsight","Flash","Pinkpoint","Repeat","Fail"]
+state = ["Onsight","Flash","Sorti",u"Répèt","Echec"]
 state_dict = {k:v for k, v in zip(state_abbr,state)}
            
 for session in sessions:
-  for climber in climbers:
-    plot_difficulty_repartition(session, climber)
-    plot_state_repartition(session, climber)
-
+  for climber in data[data.Date == session].Grimpeur.unique():
+    plot_difficulty_state_repartition(session, climber)
 
 for climber in climbers:
-    plot_level_evolution(climber)
+    plot_level_evolution_bouldering(climber)
+    plot_level_evolution_sportclimbing(climber)

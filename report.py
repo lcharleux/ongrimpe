@@ -146,10 +146,7 @@ def plot_level_evolution(climber):
 
 #-------------------------------------------------------------------------------
 # PROCESSING DATA
-
-  
-
-    
+   
 climbers = data.Grimpeur.unique() # List of registered climbers
 walls = data.Salle.unique()       # List of registers walls
 sessions = data.Date.unique()

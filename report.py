@@ -20,34 +20,41 @@ plt.style.use('ggplot')
 #------------------------------------------------------------------------------- 
 # GETTING DATA FROM GOOGLE DOCS AND PREPROCESSING
 googlepath = "https://docs.google.com/spreadsheets/d/1fu1ozajGPJdQnta2Ex3NUbRIV6DadZis0iLIc0Yh0b4/pub?output=csv"
-data = pd.read_csv(googlepath)
-data.columns = [k.replace("\n", "") for k in data.keys()] 
-data = data.applymap(weclimb.removeLineBreaks)
-data.Multiplicateur.fillna(1)
-# Processing dates
-def processDates(v):
-  return "{1}/{0}/{2}".format(*v.split("/"))
-data.Date = pd.to_datetime(data.Date.map(processDates))  
+data = weclimb.preprocess(googlepath)   
 #-------------------------------------------------------------------------------
 
-"""
+
   
 #-------------------------------------------------------------------------------
 # DIRECTORIES
 outputdir = "outputs"
 if os.path.isdir(outputdir) == False: os.mkdir(outputdir)
 
+
 #-------------------------------------------------------------------------------
 # PROCESSING DATA
-climbers = data.Grimpeur.unique() # List of registered climbers
-for climber in climbers:
+groups = data.groupby("climber")
+if True:
+  climber = "Ludovic"
+  group = groups.get_group(climber) 
+  print(climber)
   cpath = climber.replace(" ", "_")
   path = "{0}/{1}".format(outputdir, cpath)
   if os.path.isdir(path) == False: os.mkdir(path)
-  
-walls = data.Salle.unique()       # List of registers walls
-sessions = data.Date.unique()
-"""
+  #weclimb.plot_level_evolution_bouldering(group)
+  # Level evolution
+  group = pd.concat([group.loc[group.state == "onsight"], 
+                     group.loc[group.state == "flash"],
+                     group.loc[group.state == "redpoint"],
+                    ])
+  group = group.loc[group.site == "Cortigrimpe"]                  
+  out = group.groupby(["date", "grade"]).agg(
+        {"factor": np.sum})
+  out = out.unstack().fillna(0)
+  plt.figure()
+  out.factor.plot(kind = "barh")
+  plt.tight_layout()
+  plt.savefig("test.pdf")
 
 """ 
 for session in sessions:

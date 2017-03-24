@@ -17,10 +17,55 @@ def removeLineBreaks(v):
   if type(v) == str:
     return v.replace("\n", "")
   else:
-    return v  
+    return v 
+    
+def processDates(v):
+  return "{1}/{0}/{2}".format(*v.split("/"))     
 ################################################################################
 
-
+################################################################################
+def preprocess(googlepath):
+  raw_data = pd.read_csv(googlepath)
+  raw_data.columns = [k.replace("\n", "") for k in raw_data.keys()] 
+  raw_data = raw_data.applymap(removeLineBreaks)
+  raw_data["Multiplicateur"] = raw_data.Multiplicateur.fillna(1)
+  raw_data.Date = pd.to_datetime(raw_data.Date.map(processDates))
+  cmap = {"date": "Date", 
+          "climber":"Grimpeur", 
+          "site": "Salle",
+          "sector": "Secteur",
+          "factor": "Multiplicateur",
+          "route_id": "Identifiant",
+          "grade": "Niveau",
+          "belaying": "Assurage",
+          "state": "Etat",
+          }
+  data = pd.DataFrame({k:raw_data[cmap[k]] for k in cmap.keys() }, 
+                       index = raw_data.index)  
+  # Belaying conversion
+  bmap = {"Tête": "first", "Moulinette":"second"}
+  def fbmap(value):
+    if value in bmap.keys():
+      return bmap[value]
+    else:
+      return np.nan  
+  data["belaying"] = data.belaying.map(fbmap)
+  # State conversion
+  smap = {"O": "onsight", 
+          "R": "repeated",
+          "E": "failed",
+          "S": "redpoint",
+          "F" : "flash",}
+  def fsmap(value):
+    if value in smap.keys():
+      return smap[value]
+    else:
+      return np.nan  
+  data["state"] = data.state.map(fsmap)
+  # Final sorting
+  data = data.sort_values(["date", "climber"])
+  return data
+################################################################################
 
 
 ################################################################################
@@ -69,7 +114,7 @@ def plot_difficulty_state_repartition(data, session, climber):
 
 ################################################################################
 # BOULDERING LEVEL EVOLUTION
-def plot_level_evolution_bouldering(data, climber):
+def plot_level_evolution_bouldering(data, path):
   """
   Plot of the average level in bouldering (in Cortigrimpe).
   """

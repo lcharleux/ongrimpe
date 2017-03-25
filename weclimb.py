@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-
+import string
 
 
 ################################################################################
@@ -24,7 +24,7 @@ def processDates(v):
 ################################################################################
 
 ################################################################################
-def preprocess(googlepath):
+def preprocess(googlepath, site_map):
   raw_data = pd.read_csv(googlepath)
   raw_data.columns = [k.replace("\n", "") for k in raw_data.keys()] 
   raw_data = raw_data.applymap(removeLineBreaks)
@@ -62,6 +62,17 @@ def preprocess(googlepath):
     else:
       return np.nan  
   data["state"] = data.state.map(fsmap)
+  # Site kind
+  data["kind"] = data["site"].map(lambda s: site_map[s])
+  # Numerical grade
+  def grade_map(v):
+    out = float(v[0]) 
+    if len(v) >1:
+      out += string.ascii_lowercase.index('c') / 3
+    if len(v) > 2 and v[2] == "+":
+      out += 1./6.
+    return out  
+  data["grade_value"] = data.grade.map(grade_map) 
   # Final sorting
   data = data.sort_values(["date", "climber"])
   return data
@@ -245,4 +256,29 @@ def plot_level_evolution_sportclimbing(data, climber):
   axes[0].yaxis.tick_right()
   plt.suptitle(u"Evolution de {0} aux Glaisins".format(climber))
   plt.savefig("Evolution_{0}_sportclimbing.pdf".format(climber))
-################################################################################  
+################################################################################ 
+
+################################################################################
+def plot_volume(data, depth = 4, path = "./volume.pdf", kind = "boulder"):
+    group = group.loc[group.grade > group.grade.max()-depth ]
+    out = group.groupby(["date", "grade"]).agg(
+          {"factor": np.sum})
+    out = out.unstack().fillna(0)
+    index = []
+    for i in out.index:
+      date = str(i).split()[0].split("-")
+      index.append("{2}/{1}/{0}".format(*[v[-2:] for v in date]))
+    out.index = index
+    # Volume
+    fig = plt.figure()
+    ax = fig.add_subplot(1,1,1)
+    ax.set_title("Max. difficulty for {0}".format(climber))
+    out.factor.plot(kind = "area")
+    plt.xlabel("Session")
+    plt.ylabel("Count")
+    plt.tight_layout()
+    
+    plt.savefig(path +cpath+ "_max_diff.pdf")
+    
+    plt.close()
+################################################################################

@@ -20,7 +20,9 @@ plt.style.use('ggplot')
 #------------------------------------------------------------------------------- 
 # GETTING DATA FROM GOOGLE DOCS AND PREPROCESSING
 googlepath = "https://docs.google.com/spreadsheets/d/1fu1ozajGPJdQnta2Ex3NUbRIV6DadZis0iLIc0Yh0b4/pub?output=csv"
-data = weclimb.preprocess(googlepath)   
+site_map = {"Cortigrimpe": "boulder",
+            "Glaisins": "route"}
+data = weclimb.preprocess(googlepath, site_map)   
 #-------------------------------------------------------------------------------
 
 
@@ -33,13 +35,10 @@ if os.path.isdir(outputdir) == False: os.mkdir(outputdir)
 
 #-------------------------------------------------------------------------------
 # PROCESSING DATA
-groups = data.groupby("climber")
-if True:
-  climber = "Ludovic"
-  group = groups.get_group(climber) 
-  print(climber)
+for climber, group in data.groupby("climber"):
+  print("Processing stats for {0}".format(climber))
   cpath = climber.replace(" ", "_")
-  path = "{0}/{1}".format(outputdir, cpath)
+  path = "{0}/{1}/".format(outputdir, cpath)
   if os.path.isdir(path) == False: os.mkdir(path)
   #weclimb.plot_level_evolution_bouldering(group)
   # Level evolution
@@ -48,13 +47,8 @@ if True:
                      group.loc[group.state == "redpoint"],
                     ])
   group = group.loc[group.site == "Cortigrimpe"]                  
-  out = group.groupby(["date", "grade"]).agg(
-        {"factor": np.sum})
-  out = out.unstack().fillna(0)
-  plt.figure()
-  out.factor.plot(kind = "barh")
-  plt.tight_layout()
-  plt.savefig("test.pdf")
+  if len(group) != 0:
+    pass
 
 """ 
 for session in sessions:

@@ -31,31 +31,42 @@ data = weclimb.preprocess(googlepath, site_map)
 # DIRECTORIES
 outputdir = "outputs"
 if os.path.isdir(outputdir) == False: os.mkdir(outputdir)
+if os.path.isdir(outputdir+"/global") == False: os.mkdir(outputdir+"/global")
 
 
 #-------------------------------------------------------------------------------
 # PROCESSING DATA
-for climber, group in data.groupby("climber"):
-  print("Processing stats for {0}".format(climber))
-  cpath = climber.replace(" ", "_")
-  path = "{0}/{1}/".format(outputdir, cpath)
-  if os.path.isdir(path) == False: os.mkdir(path)
-  #weclimb.plot_level_evolution_bouldering(group)
-  # Level evolution
-  group = pd.concat([group.loc[group.state == "onsight"], 
-                     group.loc[group.state == "flash"],
-                     group.loc[group.state == "redpoint"],
-                    ])
-  group = group.loc[group.site == "Cortigrimpe"]                  
-  if len(group) != 0:
-    pass
+output = pd.concat([ weclimb.boulder_intensity(data = data),
+                     weclimb.boulder_volume(data = data)], axis = 1)
+                     
+#-------------------------------------------------------------------------------
+# AND PLOT !
+fig = plt.figure()
+output.intensity.plot()
+plt.ylabel("Intensity")
+plt.savefig(outputdir + "/global/global_intensity.pdf")
+plt.close()
 
-""" 
-for session in sessions:
-  for climber in data[data.Date == session].Grimpeur.unique():
-    weclimb.plot_difficulty_state_repartition(data, session, climber)
+fig = plt.figure()
+output.volume.plot()
+plt.ylabel("Volume")
+plt.savefig(outputdir + "/global/global_volume.pdf")
+plt.close()                     
+ 
+for climber in output.volume.keys():
+  cpath = outputdir + "/" + climber.replace(" ", "_")
+  if os.path.isdir(cpath) == False: os.mkdir(cpath)
 
-for climber in climbers:
-    weclimb.plot_level_evolution_bouldering(data, climber)
-    weclimb.plot_level_evolution_sportclimbing(data, climber)
-"""    
+  fig = plt.figure()
+  output.intensity[climber].plot()
+  plt.ylabel("Intensity")
+  plt.savefig(cpath + "/{0}_intensity.pdf".format(climber))
+  plt.close()
+           
+  fig = plt.figure()
+  output.volume[climber].plot()
+  plt.ylabel("Volume")
+  plt.savefig(cpath + "/{0}_volume.pdf".format(climber))
+  plt.close()
+                     
+ 

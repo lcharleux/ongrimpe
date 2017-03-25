@@ -75,6 +75,13 @@ def preprocess(googlepath, site_map):
   data["grade_value"] = data.grade.map(grade_map) 
   # Final sorting
   data = data.sort_values(["date", "climber"])
+  # Dates !
+  dates = []
+  for i in data.date:
+    date = str(i).split()[0].split("-")
+    dates.append("{0}/{1}/{2}".format(*[v[-2:] for v in date]))
+  data.date = dates
+  
   return data
 ################################################################################
 
@@ -259,26 +266,56 @@ def plot_level_evolution_sportclimbing(data, climber):
 ################################################################################ 
 
 ################################################################################
-def plot_volume(data, depth = 4, path = "./volume.pdf", kind = "boulder"):
-    group = group.loc[group.grade > group.grade.max()-depth ]
-    out = group.groupby(["date", "grade"]).agg(
+def boulder_volume(data, common_ratio = 1.5, ref_grade = 1):
+    """
+    Computes the volume of each climber during each session. Boulder difficulty
+    is scaled using
+    """
+    
+    data = data.loc[data.kind == "boulder"]
+    data = pd.concat([data.loc[data.state == "onsight"], 
+                      data.loc[data.state == "flash"],
+                      data.loc[data.state == "redpoint"],
+                      data.loc[data.state == "repeated"],])
+    
+    out = data.groupby(["date", "climber", "grade"]).agg(
           {"factor": np.sum})
     out = out.unstack().fillna(0)
-    index = []
-    for i in out.index:
-      date = str(i).split()[0].split("-")
-      index.append("{2}/{1}/{0}".format(*[v[-2:] for v in date]))
-    out.index = index
-    # Volume
-    fig = plt.figure()
-    ax = fig.add_subplot(1,1,1)
-    ax.set_title("Max. difficulty for {0}".format(climber))
-    out.factor.plot(kind = "area")
-    plt.xlabel("Session")
-    plt.ylabel("Count")
-    plt.tight_layout()
-    
-    plt.savefig(path +cpath+ "_max_diff.pdf")
-    
-    plt.close()
+    n = out.values
+    n *= (common_ratio**(np.array(out.columns.levels[1])
+          .astype(np.float64)- ref_grade + 1).reshape(n.shape[1]))
+    out = pd.DataFrame(n, index = out.index, 
+                       columns = out.columns.levels[1]).sum(axis = 1)
+    out =  out.unstack()
+    out.columns = pd.MultiIndex.from_product([("volume",), 
+                                               np.array(out.columns)], 
+                                               names = ["output", "climber"])
+    return out                                           
 ################################################################################
+
+
+################################################################################
+def boulder_intensity(data):
+    out = []
+    data = data.loc[data.kind == "boulder"]
+    data = pd.concat([data.loc[data.state == "onsight"], 
+                      data.loc[data.state == "flash"],
+                      data.loc[data.state == "redpoint"],])
+    for climber, group in data.groupby("climber"):
+      difficulty = []
+      dates = []
+      for date, group2 in group.groupby("date"):
+        mg = group2.grade_value.max()
+        fac = group2.loc[group2.grade_value == mg].factor.sum()
+        diff = mg + ((2**np.arange(1, fac, dtype = np.float64))**(-1)).sum()
+        dates.append(date)
+        difficulty.append(diff)
+      df = pd.DataFrame(difficulty, index = dates)
+      df.columns = pd.MultiIndex.from_tuples([("intensity", climber)], 
+                                               names = ["output", "climber"])
+      df.index.name = "session"
+      out.append(df)
+    out = pd.concat(out, axis = 1)
+    return out
+################################################################################
+

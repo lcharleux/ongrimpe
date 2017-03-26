@@ -58,13 +58,13 @@ for climber in output.volume.keys():
   if os.path.isdir(cpath) == False: os.mkdir(cpath)
 
   fig = plt.figure()
-  output.intensity[climber].plot()
+  output.intensity[climber].plot(marker = "o")
   plt.ylabel("Intensity")
   plt.savefig(cpath + "/{0}_intensity.pdf".format(climber))
   plt.close()
            
   fig = plt.figure()
-  output.volume[climber].plot()
+  output.volume[climber].plot(marker = "o")
   plt.ylabel("Volume")
   plt.savefig(cpath + "/{0}_volume.pdf".format(climber))
   plt.close()

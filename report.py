@@ -40,33 +40,24 @@ output = pd.concat([ weclimb.boulder_intensity(data = data),
                      weclimb.boulder_volume(data = data)], axis = 1)
                      
 #-------------------------------------------------------------------------------
-# AND PLOT !
-fig = plt.figure()
-output.intensity.plot()
-plt.ylabel("Intensity")
-plt.savefig(outputdir + "/global/global_intensity.pdf")
-plt.close()
+# AND PLOT !    
 
-fig = plt.figure()
-output.volume.plot()
-plt.ylabel("Volume")
-plt.savefig(outputdir + "/global/global_volume.pdf")
-plt.close()                     
- 
+fig, axarr = plt.subplots(2, figsize=(7,7), sharex=True)
+output.intensity.plot(ax=axarr[0], marker = "o")
+axarr[0].set_ylabel("Intensity")
+output.volume.plot(ax=axarr[1], marker = "o")
+axarr[1].set_ylabel("Volume")
+plt.savefig(outputdir + "/global/global_evolution.pdf")
+plt.close()                
+
 for climber in output.volume.keys():
   cpath = outputdir + "/" + climber.replace(" ", "_")
   if os.path.isdir(cpath) == False: os.mkdir(cpath)
 
-  fig = plt.figure()
-  output.intensity[climber].plot(marker = "o")
-  plt.ylabel("Intensity")
-  plt.savefig(cpath + "/{0}_intensity.pdf".format(climber))
+  fig, axarr = plt.subplots(2, figsize=(7,7), sharex=True)
+  output.intensity[climber].plot(ax=axarr[0], marker = "o")
+  axarr[0].set_ylabel("Intensity")
+  output.volume[climber].plot(ax=axarr[1], marker = "o")
+  axarr[1].set_ylabel("Volume")
+  plt.savefig(cpath + "/{0}_evolution.pdf".format(climber))
   plt.close()
-           
-  fig = plt.figure()
-  output.volume[climber].plot(marker = "o")
-  plt.ylabel("Volume")
-  plt.savefig(cpath + "/{0}_volume.pdf".format(climber))
-  plt.close()
-                     
- 

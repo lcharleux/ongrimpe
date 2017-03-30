@@ -38,26 +38,48 @@ if os.path.isdir(outputdir+"/global") == False: os.mkdir(outputdir+"/global")
 # PROCESSING DATA
 output = pd.concat([ weclimb.boulder_intensity(data = data),
                      weclimb.boulder_volume(data = data)], axis = 1)
+
+output2 = pd.concat([ weclimb.route_intensity(data = data)], axis = 1)
                      
 #-------------------------------------------------------------------------------
 # AND PLOT !    
 
+# BOULDERING
 fig, axarr = plt.subplots(2, figsize=(7,7), sharex=True)
 output.intensity.plot(ax=axarr[0], marker = "o")
 axarr[0].set_ylabel("Intensity")
 output.volume.plot(ax=axarr[1], marker = "o")
 axarr[1].set_ylabel("Volume")
-plt.savefig(outputdir + "/global/global_evolution.pdf")
-plt.close()                
+plt.savefig(outputdir + "/global/global_bouldering_evolution.pdf")
+plt.close()
+
+# ROUTE
+fig, axarr = plt.subplots(2, figsize=(7,7), sharex=True)
+output2.intensity.plot(ax=axarr[0], marker = "o")
+axarr[0].set_ylabel("Intensity")
+#output2.volume.plot(ax=axarr[1], marker = "o")
+axarr[1].set_ylabel("Volume")
+plt.savefig(outputdir + "/global/global_route_evolution.pdf")
+plt.close()           
 
 for climber in output.volume.keys():
   cpath = outputdir + "/" + climber.replace(" ", "_")
   if os.path.isdir(cpath) == False: os.mkdir(cpath)
 
+# BOULDERING
   fig, axarr = plt.subplots(2, figsize=(7,7), sharex=True)
   output.intensity[climber].plot(ax=axarr[0], marker = "o")
   axarr[0].set_ylabel("Intensity")
   output.volume[climber].plot(ax=axarr[1], marker = "o")
   axarr[1].set_ylabel("Volume")
-  plt.savefig(cpath + "/{0}_evolution.pdf".format(climber))
+  plt.savefig(cpath + "/{0}_bouldering_evolution.pdf".format(climber))
+  plt.close()
+
+# ROUTE
+  fig, axarr = plt.subplots(2, figsize=(7,7), sharex=True)
+  output2.intensity[climber].plot(ax=axarr[0], marker = "o")
+  axarr[0].set_ylabel("Intensity")
+  #output2.volume[climber].plot(ax=axarr[1], marker = "o")
+  axarr[1].set_ylabel("Volume")
+  plt.savefig(cpath + "/{0}_route_evolution.pdf".format(climber))
   plt.close()

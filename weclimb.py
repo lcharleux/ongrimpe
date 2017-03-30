@@ -68,7 +68,7 @@ def preprocess(googlepath, site_map):
   def grade_map(v):
     out = float(v[0]) 
     if len(v) >1:
-      out += string.ascii_lowercase.index('c') / 3
+      out += string.ascii_lowercase.index(v[1]) / 3
     if len(v) > 2 and v[2] == "+":
       out += 1./6.
     return out  
@@ -85,14 +85,14 @@ def preprocess(googlepath, site_map):
   return data
 ################################################################################
 
-
+"""
 ################################################################################
 # DIFFICULTY REPARTITION
 def plot_difficulty_state_repartition(data, session, climber):
-  """
+  "
   Bar plot of the difficulty repartition and pie plot of the state repartition,
   for a given climber on a given session.
-  """
+  "
   s = pd.DatetimeIndex((session, ))[0]
   d = data[(data.Date == session) & (data.Grimpeur == climber)]
   df2 = pd.DataFrame(index = d.Niveau.unique()).sort_index()
@@ -133,9 +133,9 @@ def plot_difficulty_state_repartition(data, session, climber):
 ################################################################################
 # BOULDERING LEVEL EVOLUTION
 def plot_level_evolution_bouldering(data, path):
-  """
+  "
   Plot of the average level in bouldering (in Cortigrimpe).
-  """
+  "
   maxs = []
   sessions_corti = []
   volume = []
@@ -193,9 +193,9 @@ def plot_level_evolution_bouldering(data, path):
 ################################################################################
 # SPORTCLIMBING LEVEL EVOLUTION  
 def plot_level_evolution_sportclimbing(data, climber):
-  """
+  "
   Plot of the average level in sportclimbing (in Glaisins).
-  """
+  "
   maxs = []
   sessions_voies = []
   volume = []
@@ -263,7 +263,8 @@ def plot_level_evolution_sportclimbing(data, climber):
   axes[0].yaxis.tick_right()
   plt.suptitle(u"Evolution de {0} aux Glaisins".format(climber))
   plt.savefig("Evolution_{0}_sportclimbing.pdf".format(climber))
-################################################################################ 
+################################################################################
+"""
 
 ################################################################################
 def boulder_volume(data, common_ratio = 1.5, ref_grade = 1):
@@ -293,7 +294,6 @@ def boulder_volume(data, common_ratio = 1.5, ref_grade = 1):
     return out                                           
 ################################################################################
 
-
 ################################################################################
 def boulder_intensity(data):
     out = []
@@ -319,3 +319,50 @@ def boulder_intensity(data):
     return out
 ################################################################################
 
+################################################################################
+#def route_volume(data, common_ratio = 1.5, ref_grade = 1):   
+#    data = data.loc[data.kind == "route"]
+#    data = pd.concat([data.loc[data.state == "onsight"], 
+#                      data.loc[data.state == "flash"],
+#                      data.loc[data.state == "redpoint"],
+#                      data.loc[data.state == "repeated"],])
+#    
+#    out = data.groupby(["date", "climber", "grade"]).agg(
+#          {"factor": np.sum})
+#    out = out.unstack().fillna(0)
+#    n = out.values
+#    n *= (common_ratio**(np.array(out.columns.levels[1])
+#          .astype(np.float64)- ref_grade + 1).reshape(n.shape[1]))
+#    out = pd.DataFrame(n, index = out.index, 
+#                       columns = out.columns.levels[1]).sum(axis = 1)
+#    out =  out.unstack()
+#    out.columns = pd.MultiIndex.from_product([("volume",), 
+#                                               np.array(out.columns)], 
+#                                               names = ["output", "climber"])
+#    return out   
+################################################################################
+
+################################################################################
+def route_intensity(data):
+    out = []
+    data = data.loc[data.kind == "route"]
+    data = pd.concat([data.loc[data.state == "onsight"], 
+                      data.loc[data.state == "flash"],
+                      data.loc[data.state == "redpoint"],])
+    for climber, group in data.groupby("climber"):
+      difficulty = []
+      dates = []
+      for date, group2 in group.groupby("date"):
+        mg = group2.grade_value.max()
+        fac = group2.loc[group2.grade_value == mg].factor.sum()
+        diff = mg + ((2**np.arange(1, fac, dtype = np.float64))**(-1)).sum()
+        dates.append(date)
+        difficulty.append(diff)
+      df = pd.DataFrame(difficulty, index = dates)
+      df.columns = pd.MultiIndex.from_tuples([("intensity", climber)], 
+                                               names = ["output", "climber"])
+      df.index.name = "session"
+      out.append(df)
+    out = pd.concat(out, axis = 1)
+    return out
+################################################################################
